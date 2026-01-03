@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/toaster";
+import { Analytics } from "@/components/analytics";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -49,8 +51,11 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
         <body className={inter.className}>
-          {children}
-          <Toaster />
+          <ThemeProvider defaultTheme="system" storageKey="buildprompt-theme">
+            {children}
+            <Toaster />
+            <Analytics />
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>
