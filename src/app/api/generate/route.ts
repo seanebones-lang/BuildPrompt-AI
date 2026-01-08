@@ -45,21 +45,21 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     let userTier: "free" | "pro" | "enterprise" = "free";
     let buildsUsed = 0;
 
-    // In demo mode, apply IP-based daily rate limiting (5 per day)
+    // In demo mode, apply IP-based daily rate limiting (10 per day)
     if (DEMO_MODE) {
       const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0] ||
                        request.headers.get('x-real-ip') ||
                        'unknown';
 
       if (clientIp !== 'unknown' && clientIp !== 'localhost') {
-        const ipRateCheck = checkDailyRateLimit(clientIp, 5); // 5 builds per day per IP
+        const ipRateCheck = checkDailyRateLimit(clientIp, 10); // 10 builds per day per IP
         if (!ipRateCheck.allowed) {
           return NextResponse.json(
             {
               success: false,
               error: {
                 code: "RATE_LIMIT_EXCEEDED",
-                message: `Demo rate limit: 5 builds per day per IP. Try again in ${Math.ceil(ipRateCheck.resetIn / 3600)} hours.`,
+                message: `Demo rate limit: 10 builds per day per IP. Try again in ${Math.ceil(ipRateCheck.resetIn / 3600)} hours.`,
               },
             },
             { status: 429 }
