@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  // Force dynamic rendering to avoid build-time errors
+  output: "standalone",
   // Security headers
   async headers() {
     return [

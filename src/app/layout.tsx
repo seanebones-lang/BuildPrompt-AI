@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import { Suspense } from "react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/toaster";
 import { Analytics } from "@/components/analytics";
@@ -56,16 +57,15 @@ export default function RootLayout({
         <ThemeProvider defaultTheme="system" storageKey="buildprompt-theme">
           {children}
           <Toaster />
-          <Analytics />
+          <Suspense fallback={null}>
+            <Analytics />
+          </Suspense>
         </ThemeProvider>
       </body>
     </html>
   );
 
-  // Wrap with ClerkProvider only if not in demo mode
-  if (DEMO_MODE) {
-    return content;
-  }
-
+  // Always wrap with ClerkProvider to avoid build issues
+  // In demo mode, middleware bypasses auth checks and UI hides auth elements
   return <ClerkProvider>{content}</ClerkProvider>;
 }
