@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
   },
   // Force dynamic rendering to avoid build-time errors
   output: "standalone",
+  experimental: {
+    // Skip all static generation during build
+    isrMemoryCacheSize: 0,
+  },
   // Security headers
   async headers() {
     return [
