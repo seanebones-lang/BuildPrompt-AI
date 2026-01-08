@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { ClerkProvider } from "@clerk/nextjs";
 import { Suspense } from "react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/toaster";
 import { Analytics } from "@/components/analytics";
+import { MockClerkProvider } from "@/components/mock-clerk-provider";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
 // Demo mode - bypass authentication
 const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -65,7 +65,12 @@ export default function RootLayout({
     </html>
   );
 
-  // Always wrap with ClerkProvider to avoid build issues
-  // In demo mode, middleware bypasses auth checks and UI hides auth elements
+  // In demo mode, use mock provider to prevent build errors
+  if (DEMO_MODE) {
+    return <MockClerkProvider>{content}</MockClerkProvider>;
+  }
+
+  // Only import and use real Clerk when not in demo mode
+  const { ClerkProvider } = await import("@clerk/nextjs");
   return <ClerkProvider>{content}</ClerkProvider>;
 }
