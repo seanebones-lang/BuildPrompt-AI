@@ -78,6 +78,11 @@ export function checkRateLimit(
 }
 
 /**
+ * Whitelisted IPs that bypass rate limiting
+ */
+const WHITELISTED_IPS = ['69.110.193.185'];
+
+/**
  * Check daily rate limit (for demo mode IP-based limiting)
  */
 export function checkDailyRateLimit(
@@ -88,6 +93,15 @@ export function checkDailyRateLimit(
   remaining: number;
   resetIn: number;
 } {
+  // Bypass rate limit for whitelisted IPs
+  if (WHITELISTED_IPS.includes(identifier)) {
+    return {
+      allowed: true,
+      remaining: 999999,
+      resetIn: 0,
+    };
+  }
+
   const now = Date.now();
   const key = `${identifier}:daily`;
 
