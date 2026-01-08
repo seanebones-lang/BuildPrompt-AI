@@ -1,29 +1,37 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 // Demo mode - bypass all authentication
 const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
-// Define public routes that don't require authentication
-const isPublicRoute = createRouteMatcher([
-  "/",
-  "/sign-in(.*)",
-  "/sign-up(.*)",
-  "/pricing",
-  "/api/generate", // Allow anonymous builds (with rate limiting)
-  "/api/webhooks/(.*)", // Stripe webhooks
-]);
-
-export default clerkMiddleware(async (auth, req) => {
-  // In demo mode, treat all routes as public
+export default async function middleware(req: NextRequest) {
+  // In demo mode, allow all requests without authentication
   if (DEMO_MODE) {
-    return;
+    return NextResponse.next();
   }
 
-  // Protect non-public routes
-  if (!isPublicRoute(req)) {
-    await auth.protect();
-  }
-});
+  // In production mode with real auth, use Clerk
+  // Dynamically import Clerk only when needed
+  const { clerkMiddleware, createRouteMatcher } = await import("@clerk/nextjs/server");
+
+  const isPublicRoute = createRouteMatcher([
+    "/",
+    "/sign-in(.*)",
+    "/sign-up(.*)",
+    "/pricing",
+    "/api/generate", // Allow anonymous builds (with rate limiting)
+    "/api/webhooks/(.*)", // Stripe webhooks
+  ]);
+
+  // Create and return Clerk middleware
+  const clerkMw = clerkMiddleware(async (auth, request) => {
+    if (!isPublicRoute(request)) {
+      await auth.protect();
+    }
+  });
+
+  return clerkMw(req);
+}
 
 export const config = {
   matcher: [
