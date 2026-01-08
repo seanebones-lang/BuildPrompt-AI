@@ -144,20 +144,8 @@ async function callGrokAPI(
   userPrompt: string
 ): Promise<GrokResponse> {
   if (!XAI_API_KEY || XAI_API_KEY.trim() === '') {
-    console.error("XAI_API_KEY missing or empty:", {
-      exists: !!XAI_API_KEY,
-      length: XAI_API_KEY?.length,
-      trimmed: XAI_API_KEY?.trim().length
-    });
     throw new Error("XAI_API_KEY is not configured");
   }
-
-  console.log("Calling Grok API:", {
-    base: XAI_API_BASE,
-    model: XAI_MODEL,
-    hasKey: !!XAI_API_KEY,
-    keyLength: XAI_API_KEY.length
-  });
 
   const response = await fetch(`${XAI_API_BASE}/chat/completions`, {
     method: "POST",
