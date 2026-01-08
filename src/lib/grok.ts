@@ -16,6 +16,7 @@ import {
 
 const XAI_API_BASE = process.env.XAI_API_BASE_URL || "https://api.x.ai/v1";
 const XAI_API_KEY = process.env.XAI_API_KEY;
+const XAI_MODEL = process.env.XAI_MODEL || "grok-4.1-fast";
 
 /**
  * Build the system prompt for Grok
@@ -142,18 +143,30 @@ async function callGrokAPI(
   systemPrompt: string,
   userPrompt: string
 ): Promise<GrokResponse> {
-  if (!XAI_API_KEY) {
+  if (!XAI_API_KEY || XAI_API_KEY.trim() === '') {
+    console.error("XAI_API_KEY missing or empty:", {
+      exists: !!XAI_API_KEY,
+      length: XAI_API_KEY?.length,
+      trimmed: XAI_API_KEY?.trim().length
+    });
     throw new Error("XAI_API_KEY is not configured");
   }
+
+  console.log("Calling Grok API:", {
+    base: XAI_API_BASE,
+    model: XAI_MODEL,
+    hasKey: !!XAI_API_KEY,
+    keyLength: XAI_API_KEY.length
+  });
 
   const response = await fetch(`${XAI_API_BASE}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${XAI_API_KEY}`,
+      Authorization: `Bearer ${XAI_API_KEY.trim()}`,
     },
     body: JSON.stringify({
-      model: "grok-4.1-fast",
+      model: XAI_MODEL,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
