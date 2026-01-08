@@ -42,22 +42,30 @@ export const metadata: Metadata = {
   },
 };
 
+// Demo mode - bypass authentication
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        <body className={inter.className}>
-          <ThemeProvider defaultTheme="system" storageKey="buildprompt-theme">
-            {children}
-            <Toaster />
-            <Analytics />
-          </ThemeProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+  const content = (
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className}>
+        <ThemeProvider defaultTheme="system" storageKey="buildprompt-theme">
+          {children}
+          <Toaster />
+          <Analytics />
+        </ThemeProvider>
+      </body>
+    </html>
   );
+
+  // Wrap with ClerkProvider only if not in demo mode
+  if (DEMO_MODE) {
+    return content;
+  }
+
+  return <ClerkProvider>{content}</ClerkProvider>;
 }

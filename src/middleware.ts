@@ -1,5 +1,8 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
+// Demo mode - bypass all authentication
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+
 // Define public routes that don't require authentication
 const isPublicRoute = createRouteMatcher([
   "/",
@@ -11,6 +14,11 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
+  // In demo mode, treat all routes as public
+  if (DEMO_MODE) {
+    return;
+  }
+
   // Protect non-public routes
   if (!isPublicRoute(req)) {
     await auth.protect();

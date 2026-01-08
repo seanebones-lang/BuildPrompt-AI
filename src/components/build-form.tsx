@@ -27,6 +27,9 @@ import { toast } from "@/hooks/use-toast";
 import { CODING_AGENTS, type CodingAgent, type BuildResponse } from "@/types";
 import { sanitizeInput } from "@/lib/utils";
 
+// Demo mode - skip build limit checks
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+
 const buildFormSchema = z.object({
   idea: z
     .string()
@@ -70,7 +73,8 @@ export function BuildForm({ onBuildComplete, remainingBuilds }: BuildFormProps) 
   const selectedAgent = form.watch("agent");
 
   async function onSubmit(data: BuildFormValues) {
-    if (remainingBuilds !== undefined && remainingBuilds <= 0) {
+    // Skip build limit check in demo mode
+    if (!DEMO_MODE && remainingBuilds !== undefined && remainingBuilds <= 0) {
       toast({
         title: "Build limit reached",
         description:

@@ -9,8 +9,11 @@ import { BuildForm } from "@/components/build-form";
 import { BuildOutput } from "@/components/build-output";
 import type { BuildResponse } from "@/types";
 
+// Demo mode - hide authentication UI
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+
 export default function Home() {
-  const { isSignedIn, isLoaded } = useUser();
+  const { isSignedIn, isLoaded } = DEMO_MODE ? { isSignedIn: true, isLoaded: true } : useUser();
   const [buildResult, setBuildResult] = useState<BuildResponse | null>(null);
 
   const handleBuildComplete = (response: BuildResponse) => {
@@ -32,27 +35,31 @@ export default function Home() {
           </Link>
 
           <nav className="flex items-center gap-4">
-            <Link
-              href="/pricing"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Pricing
-            </Link>
-            {isLoaded && (
+            {!DEMO_MODE && (
               <>
-                {isSignedIn ? (
+                <Link
+                  href="/pricing"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Pricing
+                </Link>
+                {isLoaded && (
                   <>
-                    <Link href="/dashboard">
-                      <Button variant="outline" size="sm">
-                        Dashboard
-                      </Button>
-                    </Link>
-                    <UserButton afterSignOutUrl="/" />
+                    {isSignedIn ? (
+                      <>
+                        <Link href="/dashboard">
+                          <Button variant="outline" size="sm">
+                            Dashboard
+                          </Button>
+                        </Link>
+                        <UserButton afterSignOutUrl="/" />
+                      </>
+                    ) : (
+                      <SignInButton mode="modal">
+                        <Button size="sm">Sign In</Button>
+                      </SignInButton>
+                    )}
                   </>
-                ) : (
-                  <SignInButton mode="modal">
-                    <Button size="sm">Sign In</Button>
-                  </SignInButton>
                 )}
               </>
             )}

@@ -78,6 +78,58 @@ export function checkRateLimit(
 }
 
 /**
+ * Check daily rate limit (for demo mode IP-based limiting)
+ */
+export function checkDailyRateLimit(
+  identifier: string,
+  maxPerDay: number = 5
+): {
+  allowed: boolean;
+  remaining: number;
+  resetIn: number;
+} {
+  const now = Date.now();
+  const key = `${identifier}:daily`;
+
+  const existing = rateLimitStore.get(key);
+
+  // Clean up expired entries
+  if (existing && now > existing.resetTime) {
+    rateLimitStore.delete(key);
+  }
+
+  const current = rateLimitStore.get(key);
+
+  if (!current) {
+    // First request in this window
+    rateLimitStore.set(key, {
+      count: 1,
+      resetTime: now + 24 * 60 * 60 * 1000, // 24 hours
+    });
+    return {
+      allowed: true,
+      remaining: maxPerDay - 1,
+      resetIn: 24 * 60 * 60, // seconds
+    };
+  }
+
+  if (current.count >= maxPerDay) {
+    return {
+      allowed: false,
+      remaining: 0,
+      resetIn: Math.ceil((current.resetTime - now) / 1000),
+    };
+  }
+
+  current.count++;
+  return {
+    allowed: true,
+    remaining: maxPerDay - current.count,
+    resetIn: Math.ceil((current.resetTime - now) / 1000),
+  };
+}
+
+/**
  * Check if user has exceeded their monthly build limit
  */
 export function checkMonthlyLimit(

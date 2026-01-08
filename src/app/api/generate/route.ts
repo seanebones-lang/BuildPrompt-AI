@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { generateBuild } from "@/lib/grok";
-import { checkRateLimit, checkMonthlyLimit } from "@/lib/rate-limit";
+import { checkRateLimit, checkMonthlyLimit, checkDailyRateLimit } from "@/lib/rate-limit";
 import { getOrCreateUser, recordUsage, getUserMonthlyUsage } from "@/lib/supabase";
 import { sanitizeInput, detectDangerousPatterns, checkForOutdatedReferences } from "@/lib/utils";
 import type { BuildRequest, ApiResponse, BuildResponse } from "@/types";
 
 export const maxDuration = 60; // Allow up to 60 seconds for AI generation
+
+// Demo mode - bypass all rate limits and authentication checks
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
 export async function POST(request: NextRequest): Promise<NextResponse<ApiResponse<BuildResponse>>> {
   try {
@@ -42,7 +45,31 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     let userTier: "free" | "pro" | "enterprise" = "free";
     let buildsUsed = 0;
 
-    if (userId) {
+    // In demo mode, apply IP-based daily rate limiting (5 per day)
+    if (DEMO_MODE) {
+      const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0] ||
+                       request.headers.get('x-real-ip') ||
+                       'unknown';
+
+      if (clientIp !== 'unknown' && clientIp !== 'localhost') {
+        const ipRateCheck = checkDailyRateLimit(clientIp, 5); // 5 builds per day per IP
+        if (!ipRateCheck.allowed) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: {
+                code: "RATE_LIMIT_EXCEEDED",
+                message: `Demo rate limit: 5 builds per day per IP. Try again in ${Math.ceil(ipRateCheck.resetIn / 3600)} hours.`,
+              },
+            },
+            { status: 429 }
+          );
+        }
+      }
+    }
+
+    // Skip authentication and rate limits in demo mode
+    if (!DEMO_MODE && userId) {
       // Get or create user in database
       const user = await getOrCreateUser(userId, "", "");
       if (user) {
@@ -95,8 +122,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       console.warn("Content warnings:", { dangerousPatterns, outdatedRefs, buildId: buildResponse.id });
     }
 
-    // Record usage if authenticated
-    if (userId) {
+    // Record usage if authenticated (skip in demo mode)
+    if (!DEMO_MODE && userId) {
       await recordUsage(userId, buildResponse.id, buildResponse.tokensUsed);
     }
 
