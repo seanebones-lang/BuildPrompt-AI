@@ -40,8 +40,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       additionalContext: additionalContext ? sanitizeInput(additionalContext) : undefined,
     };
 
-    // Check authentication (optional - allow anonymous for demo)
-    const { userId } = await auth();
+    // Check authentication (skip in demo mode)
+    let userId: string | null = null;
     let userTier: "free" | "pro" | "enterprise" = "free";
     let buildsUsed = 0;
 
@@ -68,7 +68,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       }
     }
 
-    // Skip authentication and rate limits in demo mode
+    // Get authenticated user in production mode
+    if (!DEMO_MODE) {
+      const authResult = await auth();
+      userId = authResult.userId;
+    }
+
+    // Apply user-based rate limits in production mode
     if (!DEMO_MODE && userId) {
       // Get or create user in database
       const user = await getOrCreateUser(userId, "", "");
