@@ -1,0 +1,1 @@
+export const PAGINATION = { LIMIT: 20, MAX: 50 } as const;
